@@ -1,14 +1,13 @@
 import os
 import glob
+import pathlib
 import shutil
 import tempfile
-
 import psutil
 
 
 def remove_temp_files():
-    # # temp_file_dir = tempfile.gettempdir()
-    # temp_file_dir = "C:\Users\nidha\OneDrive\Documents\rah"
+    temp_file_dir = tempfile.gettempdir()
     count = 0
     for item in os.listdir(temp_file_dir):
         if count >= 5:
@@ -28,20 +27,27 @@ def remove_temp_files():
 
 
 def file_in_use(path):
-    for proc in psutil.process_iter(['open_files']):
+    for proc in psutil.process_iter(attrs=['pid', 'name']):
         try:
-            if any(file.path == path for file in proc.info['open_files'] or []):
-                print(f"File {path} is in use.")
-                return True
+            for open_file in proc.open_files():
+                if open_file.path == path:
+                    print(f"File {path} in use by process.")
+                    return True
         except (psutil.NoSuchProcess, psutil.AccessDenied):
-            pass
-    print(f"File {path} is not in use.")
+            continue
+    print(f"File {path} not in use.")
     return False
 
 
+def file_age(file_path):
+    path = pathlib.Path(file_path)
+    timestamp = path.stat().st_atime
+    print(f"{path}: {timestamp}.")
 
-thePath = r"C:\Users\nidha\Documents\pythonProject\.venv\Scripts\python.exe C:\Users\nidha\Downloads\Automated-PC-Maintenance\RemoveTempFiles.py"
-file_in_use(thePath)
 
+temp_file_dir = tempfile.gettempdir()
+for item in os.listdir(temp_file_dir):
+    item_path = os.path.join(temp_file_dir, item)
+    file_age(item_path)
 
 
