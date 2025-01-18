@@ -4,6 +4,8 @@ import time
 import tkinter as tk
 from tkinter import filedialog
 
+import schedule
+
 # Path to JSON file for storing directories to clear
 DATA_FILE = "directories.txt"
 
@@ -23,10 +25,6 @@ def save_dir(dirs):
 
 
 # Function asking what folders need to be cleared
-# def select_folder():
-#     directory = input("Enter the directory: ")
-#     print(directory)
-#     return directory
 def select_dir():
     dir_selected = filedialog.askdirectory()
     if dir_selected:
@@ -98,6 +96,8 @@ select_button.pack(pady=20)
 
 root.mainloop()
 
+schedule.every(30).days.do(cleanup())
 
-cleanup()
-
+while True:
+    schedule.run_pending()
+    time.sleep(300)
