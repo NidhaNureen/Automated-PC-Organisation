@@ -1,4 +1,4 @@
-# Automated-PC-Maintenance 💻🔧
+# Automated-PC-Organization 💻🔧
 
 ## Features
 * Select folders that will be periodically cleared up
