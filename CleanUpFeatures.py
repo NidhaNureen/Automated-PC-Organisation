@@ -1,19 +1,43 @@
+import json
 import os
 import time
+import tkinter as tk
+from tkinter import filedialog
+
+# Path to JSON file for storing directories to clear
+DATA_FILE = "directories.txt"
 
 
-def main_cleanup():
-    user = os.getlogin()
-    ss_directory = os.path.join(f"C:\\Users\\{user}\\Pictures\\Screenshots")
-    capture_directory = os.path.join(f"C:\\Users\\{user}\\Videos\\Captures")
-    vid_directory = os.path.join(f"C:\\Users\\{user}\\Videos")
-    if not os.path.exists(ss_directory):
-        ss_directory = os.path.join(f"C:\\Users\\{user}\\OneDrive\\Pictures\\Screenshots")
-    if not os.path.exists(ss_directory):
-        print("No screenshot directory found.")
-    # clear_screenshots(ss_directory)
-    # clear_screenshots(capture_directory)
-    clear_videos(vid_directory)
+# Function to load all directories from data file
+def load_dir():
+    if os.path.exists(DATA_FILE):
+        with open(DATA_FILE, "r") as file:
+            return [line.strip() for line in file.readlines()]
+    return []
+
+
+# Function to save directories to data file
+def save_dir(dirs):
+    with open(DATA_FILE, "w") as file:
+        file.write("\n".join(dirs))
+
+
+# Function asking what folders need to be cleared
+# def select_folder():
+#     directory = input("Enter the directory: ")
+#     print(directory)
+#     return directory
+def select_dir():
+    dir_selected = filedialog.askdirectory()
+    if dir_selected:
+        dirs = load_dir()
+        if dir_selected not in dirs:
+            dirs.append(dir_selected)
+            save_dir(dirs)
+            print(f"{dir_selected} has been selected.")
+        else:
+            print(f"{dir_selected} has already been selected.")
+        print(f"All directories: {dirs}")
 
 
 # Function to check file age
@@ -32,51 +56,48 @@ def file_handling(file_path, filename):
         print(f"{filename} younger than 30 days, has not been deleted.")
 
 
-# Function for clearing screenshots older than 30 days
-def clear_screenshots(directory):
-    try:
-        for filename in os.listdir(directory):
-            file_path = os.path.join(directory, filename)
-            if not os.path.isfile(file_path):
-                continue
-            if not filename.endswith(".png"):
-                print(f"Not a screenshot file: {filename}")
-                continue
-            file_handling(file_path, filename)
-    except Exception as e:
-        print(f"An error occured while trying to clear screenshots: {e}")
-
-
-# Function to check if directory (and subdirectories) contain videos
-def contains_video(directory, extensions):
-    contains_any_vids = False
+# Function check if directory (and subdirectories) contain files
+def contains_files(directory):
+    contains_file = False
     for item in os.listdir(directory):
         item_path = os.path.join(directory, item)
         if os.path.isdir(item_path):
-            if contains_video(item_path, extensions):
-                contains_any_vids = True
+            print(f"{item} is a folder")
+            if contains_files(item_path):
+                contains_file = True
         if os.path.isfile(item_path):
-            if item.lower().endswith(extensions):
-                file_handling(item_path, item)
-                contains_any_vids = True
-            else:
-                print(f"{item} is not a video.")
-    return contains_any_vids
+            file_handling(item_path, item)
+            contains_file = True
+    return contains_file
 
 
-# Function for clearing old vid files
-def clear_videos(direct):
-    extensions = ['.mp4', '.mkv', '.avi', '.mov', '.flv', '.wmv', '.mpeg']
-    try:
-        for item in os.listdir(direct):
-            item_path = os.path.join(direct, item)
-            if os.path.isdir(item_path):
-                if not contains_video(item_path, tuple(extensions)):
-                    print(f"{item_path} is empty or contains no videos")
-            elif os.path.isfile(item_path) and item.lower().endswith(tuple(extensions)):
-                print(f"{item} is a video file")
-    except Exception as e:
-        print(f"An error occured while trying to clear videos: {e}")
+# Function to clean selected folder
+def cleanup():
+    dirs = load_dir()
+    for directory in dirs:
+        try:
+            for item in os.listdir(directory):
+                item_path = os.path.join(directory, item)
+                if os.path.isdir(item_path):
+                    if not contains_files(item_path):
+                        print(f"{item_path} is empty or contains no files")
+                elif os.path.isfile(item_path):
+                    file_handling(item_path, item)
+                    print(f"{item} is a file")
+        except Exception as e:
+            print(f"An error occured while trying to clear files: {e}")
 
 
-main_cleanup()
+# Create the main window
+root = tk.Tk()
+root.title("Folder Selector")
+
+# Add a button to open the folder dialog
+select_button = tk.Button(root, text="Select Folder", command=select_dir)
+select_button.pack(pady=20)
+
+root.mainloop()
+
+
+cleanup()
+
