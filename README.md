@@ -1,8 +1,8 @@
 # Automated-PC-Maintenance 💻🔧
 
 ## Features
-* Track and log CPU usage, and GPU usage providing detailed performance insights.
-
+* Select folders that will be periodically cleared up
+* Select folders that will be cleared and the content will be backed on google drive
 
 ## Installation Instructions
 
