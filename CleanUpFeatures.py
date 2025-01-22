@@ -1,7 +1,7 @@
 import json
 import os
 import time
-import tkinter as tk
+from tkinter import *
 from tkinter import filedialog
 import logging
 
@@ -91,19 +91,6 @@ def cleanup():
         except Exception as e:
             print(f"An error occured while trying to clear files: {e}")
             logger.error(f"An error occured while trying to clear files: {e}")
-
-
-# Create the main window
-root = tk.Tk()
-root.title("Folder Selector")
-
-# Add a button to open the folder dialog
-select_button = tk.Button(root, text="Select Folder", command=select_dir)
-select_button.pack(pady=20)
-
-root.mainloop()
-
-
 
 
 # schedule.every(30).days.do(cleanup())
