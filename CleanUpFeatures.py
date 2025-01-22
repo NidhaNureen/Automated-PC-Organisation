@@ -3,11 +3,15 @@ import os
 import time
 import tkinter as tk
 from tkinter import filedialog
+import logging
 
-import schedule
+# import schedule
 
 # Path to JSON file for storing directories to clear
 DATA_FILE = "directories.txt"
+
+# Process logger
+logger = logging.getLogger()
 
 
 # Function to load all directories from data file
@@ -49,9 +53,11 @@ def is_older_than(file_path, days=30):
 def file_handling(file_path, filename):
     if is_older_than(file_path, days=30):
         print(f"{filename} older than 30 days, has been deleted.")
+        logger.info(f"{filename} older than 30 days, has been deleted.")
         # os.remove(file_path)
     else:
         print(f"{filename} younger than 30 days, has not been deleted.")
+        logger.info(f"{filename} younger than 30 days, has not been deleted.")
 
 
 # Function check if directory (and subdirectories) contain files
@@ -84,6 +90,7 @@ def cleanup():
                     print(f"{item} is a file")
         except Exception as e:
             print(f"An error occured while trying to clear files: {e}")
+            logger.error(f"An error occured while trying to clear files: {e}")
 
 
 # Create the main window
@@ -96,8 +103,11 @@ select_button.pack(pady=20)
 
 root.mainloop()
 
-schedule.every(30).days.do(cleanup())
 
-while True:
-    schedule.run_pending()
-    time.sleep(300)
+
+
+# schedule.every(30).days.do(cleanup())
+#
+# while True:
+#     schedule.run_pending()
+#     time.sleep(300)
