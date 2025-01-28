@@ -1,9 +1,8 @@
-import json
+\
 import os
 import time
-from tkinter import *
-from tkinter import filedialog
 import logging
+
 
 # import schedule
 
@@ -28,65 +27,51 @@ def save_dir(dirs):
         file.write("\n".join(dirs))
 
 
-# Function asking what folders need to be cleared
-def select_dir():
-    dir_selected = filedialog.askdirectory()
-    if dir_selected:
-        dirs = load_dir()
-        if dir_selected not in dirs:
-            dirs.append(dir_selected)
-            save_dir(dirs)
-            print(f"{dir_selected} has been selected.")
-        else:
-            print(f"{dir_selected} has already been selected.")
-        print(f"All directories: {dirs}")
-
-
 # Function to check file age
-def is_older_than(file_path, days=30):
+def is_older_than(file_path, days):
     curr_time = time.time()
     file_age = curr_time - os.path.getctime(file_path)
     return file_age/86400 > days
 
 
 # Function to handle file deletion
-def file_handling(file_path, filename):
-    if is_older_than(file_path, days=30):
-        print(f"{filename} older than 30 days, has been deleted.")
-        logger.info(f"{filename} older than 30 days, has been deleted.")
+def file_handling(file_path, filename, days):
+    if is_older_than(file_path, days):
+        print(f"{filename} older than {days} days, has been deleted.")
+        logger.info(f"{filename} older than {days} days, has been deleted.")
         # os.remove(file_path)
     else:
-        print(f"{filename} younger than 30 days, has not been deleted.")
-        logger.info(f"{filename} younger than 30 days, has not been deleted.")
+        print(f"{filename} younger than {days} days, has not been deleted.")
+        logger.info(f"{filename} younger than {days} days, has not been deleted.")
 
 
 # Function check if directory (and subdirectories) contain files
-def contains_files(directory):
+def contains_files(directory, days):
     contains_file = False
     for item in os.listdir(directory):
         item_path = os.path.join(directory, item)
         if os.path.isdir(item_path):
             print(f"{item} is a folder")
-            if contains_files(item_path):
+            if contains_files(item_path, days):
                 contains_file = True
         if os.path.isfile(item_path):
-            file_handling(item_path, item)
+            file_handling(item_path, item, days)
             contains_file = True
     return contains_file
 
 
 # Function to clean selected folder
-def cleanup():
+def cleanup(days):
     dirs = load_dir()
     for directory in dirs:
         try:
             for item in os.listdir(directory):
                 item_path = os.path.join(directory, item)
                 if os.path.isdir(item_path):
-                    if not contains_files(item_path):
+                    if not contains_files(item_path, days):
                         print(f"{item_path} is empty or contains no files")
                 elif os.path.isfile(item_path):
-                    file_handling(item_path, item)
+                    file_handling(item_path, item, days)
                     print(f"{item} is a file")
         except Exception as e:
             print(f"An error occured while trying to clear files: {e}")
