@@ -1,0 +1,2 @@
+C:/Users/nidha/OneDrive/Documents/rah
+C:/Users/nidha/OneDrive/Documents/todo-django/todolist/static/css
