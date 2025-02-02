@@ -1,6 +1,7 @@
 from tkinter import *
 from tkinter import filedialog, messagebox
 import CleanUpFeatures
+import Logger
 
 
 # Function asking what folders need to be cleared
@@ -47,10 +48,16 @@ def remove_dir():
         messagebox.showinfo("No Directories", "No directories to remove.")
 
 
+# Number of days
+saved_days = CleanUpFeatures.load_days()
+
+
 # Function to trigger clean-up (temp)
 def start_cleanup():
     days = int(days_entry.get())
-    CleanUpFeatures.cleanup(days)
+    CleanUpFeatures.save_days(days)
+    Logger.clean_up_log()
+    messagebox.showinfo("Cleanup", f"Cleanup executed. Next cleanup in {days} days.")
 
 
 # Create the main window
@@ -82,7 +89,7 @@ days_label = Label(root, text="Number of days:")
 days_label.pack(pady=5)
 
 days_entry = Entry(root)
-days_entry.insert(0, "30")  # Default value
+days_entry.insert(0, saved_days)  # Default value
 days_entry.pack(pady=5)
 
 # Cleanup button
