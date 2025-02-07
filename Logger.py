@@ -17,8 +17,8 @@ def del_old_logs():
     dir_list = os.listdir(".")
     log_files = [f for f in dir_list if f.startswith("CleanUpLog.log.")]
 
-    if len(log_files) > 3:
-        for file in sorted(log_files)[:-3]:  # Keep only the last 3 logs
+    if len(log_files) >= 3:
+        for file in sorted(log_files)[:-4]:  # Keep only the last 3 logs
             os.remove(file)
 
 

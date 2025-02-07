@@ -1,7 +1,13 @@
 from tkinter import *
 from tkinter import filedialog, messagebox
+import os
 import CleanUpFeatures
 import Logger
+import threading
+import time
+import schedule
+from pystray import Icon, MenuItem, Menu
+from PIL import Image
 
 
 # Function asking what folders need to be cleared
@@ -53,16 +59,55 @@ saved_days = CleanUpFeatures.load_days()
 
 
 # Function to trigger clean-up (temp)
-def start_cleanup():
-    days = int(days_entry.get())
+def start_cleanup(days):
     CleanUpFeatures.save_days(days)
     Logger.clean_up_log()
-    messagebox.showinfo("Cleanup", f"Cleanup executed. Next cleanup in {days} days.")
+
+
+# Function to run cleanup in background
+def background_cleanup(interval):
+    schedule.clear()
+    schedule.every(interval).days.do(lambda: start_cleanup(interval))
+
+    while True:
+        schedule.run_pending()
+        time.sleep(7200)
+
+
+# Function to start background thread for scheduling
+def scheduler():
+    interval = int(days_entry.get())
+    threading.Thread(target=background_cleanup, args=(interval,), daemon=True).start()
+    messagebox.showinfo("Scheduler", f"Automatic cleanup scheduled every {interval} days.")
+
+
+# Functions for system tray support
+def minimize_to_tray(*args):
+    root.withdraw()
+    threading.Thread(target=tray_icon.run, daemon=True).start()
+
+
+def restore_from_tray(icon, item=None):
+    root.after(0, root.deiconify)
+
+
+def exit_app(icon, item=None):
+    tray_icon.stop()
+    root.quit()
+    os._exit(0)
 
 
 # Create the main window
 root = Tk()
 root.title("Folder Management")
+
+root.protocol("WM_DELETE_WINDOW", minimize_to_tray)
+
+# Tray icon
+tray_img = Image.new('RGB', (64, 64), (255, 255, 255))
+tray_menu = Menu(MenuItem("Open", restore_from_tray), MenuItem("Exit", exit_app))
+tray_icon = Icon("Automated-PC-Maintenance", tray_img, menu=tray_menu)
+
 
 # Clean up folders label
 w = Label(root, text="Select Folders to Clear")
@@ -93,10 +138,13 @@ days_entry.insert(0, saved_days)  # Default value
 days_entry.pack(pady=5)
 
 # Cleanup button
-cleanup_button = Button(root, text="Cleanup", command=start_cleanup)
-cleanup_button.pack(pady=20, padx=100)
+Button(root, text="Schedule Cleanup", command=scheduler).pack(pady=20, padx=100)
+
+# Minimize to Tray
 
 
 list_dir()
 
+
+# Run GUI
 root.mainloop()

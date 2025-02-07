@@ -2,8 +2,6 @@ import json
 import os
 import time
 import logging
-# import schedule
-
 
 DATA_FILE = "directories.txt"
 
@@ -58,7 +56,7 @@ def file_handling(file_path, filename):
     if is_older_than(file_path):
         print(f"{filename} older than {days} days, has been deleted.")
         logger.info(f"{filename} older than {days} days, has been deleted.")
-        # os.remove(file_path)
+        os.remove(file_path)
     else:
         print(f"{filename} younger than {days} days, has not been deleted.")
         logger.info(f"{filename} younger than {days} days, has not been deleted.")
@@ -84,6 +82,8 @@ def cleanup():
     dirs = load_dir()
     for directory in dirs:
         try:
+            if not any(os.listdir(directory)):
+                print(f"{directory} is empty")
             for item in os.listdir(directory):
                 item_path = os.path.join(directory, item)
                 if os.path.isdir(item_path):
@@ -95,10 +95,3 @@ def cleanup():
         except Exception as e:
             print(f"An error occured while trying to clear files: {e}")
             logger.error(f"An error occured while trying to clear files: {e}")
-
-
-# schedule.every(30).days.do(cleanup())
-#
-# while True:
-#     schedule.run_pending()
-#     time.sleep(300)
