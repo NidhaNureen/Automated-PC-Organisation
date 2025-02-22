@@ -1,7 +1,15 @@
 from tkinter import *
 from tkinter import filedialog, messagebox
+import sys
+import os
 import CleanUpFeatures
 import Logger
+import threading
+import time
+import schedule
+import winreg
+from pystray import Icon, MenuItem, Menu
+from PIL import Image
 
 
 # Function asking what folders need to be cleared
@@ -53,16 +61,106 @@ saved_days = CleanUpFeatures.load_days()
 
 
 # Function to trigger clean-up (temp)
-def start_cleanup():
-    days = int(days_entry.get())
+def start_cleanup(days):
     CleanUpFeatures.save_days(days)
     Logger.clean_up_log()
-    messagebox.showinfo("Cleanup", f"Cleanup executed. Next cleanup in {days} days.")
+
+
+# Function to run cleanup in background
+def background_cleanup(interval):
+    schedule.clear()
+    schedule.every(interval).days.do(lambda: start_cleanup(interval))
+
+    while True:
+        schedule.run_pending()
+        time.sleep(86400)
+
+
+# TEST
+# def background_cleanup(interval):
+#     schedule.clear()
+#     schedule.every(interval).seconds.do(lambda: start_cleanup(interval))  # Test with seconds
+#
+#     while True:
+#         schedule.run_pending()
+#         print("Checking schedule...")  # Debugging
+#         time.sleep(5)  # Sleep for 5 seconds to observe scheduling
+
+
+def auto_start_cleanup():
+    interval = CleanUpFeatures.load_days()  # Load saved interval
+    if interval > 0:  # If a valid interval is saved, start scheduling
+        threading.Thread(target=background_cleanup, args=(interval,), daemon=True).start()
+        print(f"Auto-started cleanup every {interval} days.")
+
+
+# Function to start background thread for scheduling
+def scheduler():
+    try:
+        interval = int(days_entry.get())
+        if interval <= 0:
+            raise ValueError("Interval must be greater than 0.")
+        CleanUpFeatures.save_days(interval)
+        threading.Thread(target=background_cleanup, args=(interval,), daemon=True).start()
+        messagebox.showinfo("Scheduler", f"Automatic cleanup scheduled every {interval} days.")
+    except ValueError:
+        messagebox.showerror("Error", "Please enter an integer.")
+
+
+# Functions for system tray support
+if getattr(sys, 'frozen', False):
+    base_path = sys._MEIPASS  # Temp folder when running as an EXE
+else:
+    base_path = os.path.dirname(__file__)  # Normal script execution
+
+icon_path = os.path.join(base_path, "icon.ico")
+
+
+# Make it a start up app
+def add_to_startup():
+    exe_path = sys.executable
+    if getattr(sys, 'frozen', False):
+        exe_path = os.path.abspath(exe_path)
+
+    key = r"Software\Microsoft\Windows\CurrentVersion\Run"
+    try:
+        with winreg.OpenKey(winreg.HKEY_CURRENT_USER, key, 0, winreg.KEY_SET_VALUE) as reg_key:
+            winreg.SetValueEx(reg_key, "AutomatedPCCleanup", 0, winreg.REG_SZ, exe_path)
+        print("Added to startup successfully")
+    except Exception as e:
+        print(f"Failed to add to startup: {e}")
+
+
+def create_image():
+    img = Image.open(icon_path)
+    return img
+
+
+def minimize_to_tray(*args):
+    root.withdraw()
+
+
+def restore_from_tray(icon, item=None):
+    root.after(0, root.deiconify)
+
+
+def exit_app(icon, item=None):
+    tray_icon.stop()
+    root.quit()
+    os._exit(0)
 
 
 # Create the main window
 root = Tk()
 root.title("Folder Management")
+
+root.protocol("WM_DELETE_WINDOW", minimize_to_tray)
+
+# Tray icon
+tray_img = Image.new('RGB', (64, 64), (255, 255, 255))
+tray_menu = Menu(MenuItem("Open", restore_from_tray), MenuItem("Exit", exit_app))
+tray_icon = Icon("Automated-PC-Maintenance", create_image(), menu=tray_menu)
+
 
 # Clean up folders label
 w = Label(root, text="Select Folders to Clear")
@@ -93,10 +191,17 @@ days_entry.insert(0, saved_days)  # Default value
 days_entry.pack(pady=5)
 
 # Cleanup button
-cleanup_button = Button(root, text="Cleanup", command=start_cleanup)
-cleanup_button.pack(pady=20, padx=100)
+Button(root, text="Schedule Cleanup", command=scheduler).pack(pady=20, padx=100)
 
+# Minimize to Tray
 
 list_dir()
 
+threading.Thread(target=tray_icon.run, daemon=True).start()
+
+auto_start_cleanup()
+
+add_to_startup()
+
+# Run GUI
 root.mainloop()
