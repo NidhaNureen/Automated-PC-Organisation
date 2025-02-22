@@ -2,9 +2,9 @@ import json
 import os
 import time
 import logging
+import sys
 
 DATA_FILE = "directories.txt"
-
 CONFIG_FILE = "config.json"
 
 logger = logging.getLogger()
@@ -24,10 +24,22 @@ def save_dir(dirs):
         file.write("\n".join(dirs))
 
 
+def get_config_path():
+    """Ensure config.json is saved in a persistent location."""
+    if getattr(sys, "frozen", False):  # Running as an EXE
+        base_path = os.path.expanduser("~\\AppData\\Local\\Automated-PC-Maintenance")
+    else:  # Running as a script
+        base_path = os.path.dirname(__file__)
+
+    os.makedirs(base_path, exist_ok=True)  # Ensure directory exists
+    return os.path.join(base_path, CONFIG_FILE)
+
+
 # Function to load the saved interval
 def load_days():
-    if os.path.exists(CONFIG_FILE):
-        with open(CONFIG_FILE, "r") as file:
+    config_path = get_config_path()
+    if os.path.exists(config_path):
+        with open(config_path, "r") as file:
             try:
                 config = json.load(file)
                 return config.get("days", 30)
@@ -38,7 +50,9 @@ def load_days():
 
 # Function to save interval
 def save_days(days):
-    with open(CONFIG_FILE, "w") as file:
+    print("Saving config to:", get_config_path())
+    config_path = get_config_path()
+    with open(config_path, "w") as file:
         json.dump({"days": days}, file)
 
 
@@ -47,7 +61,7 @@ def is_older_than(file_path):
     days = load_days()
     curr_time = time.time()
     file_age = curr_time - os.path.getctime(file_path)
-    return file_age/86400 > days
+    return file_age / 86400 > days
 
 
 # Function to handle file deletion
@@ -62,7 +76,7 @@ def file_handling(file_path, filename):
         logger.info(f"{filename} younger than {days} days, has not been deleted.")
 
 
-# Function check if directory (and subdirectories) contain files
+# Function to check if directory (and subdirectories) contain files
 def contains_files(directory):
     contains_file = False
     for item in os.listdir(directory):
@@ -93,5 +107,5 @@ def cleanup():
                     file_handling(item_path, item)
                     print(f"{item} is a file")
         except Exception as e:
-            print(f"An error occured while trying to clear files: {e}")
-            logger.error(f"An error occured while trying to clear files: {e}")
+            print(f"An error occurred while trying to clear files: {e}")
+            logger.error(f"An error occurred while trying to clear files: {e}")

@@ -1,5 +1,6 @@
 from tkinter import *
 from tkinter import filedialog, messagebox
+import sys
 import os
 import CleanUpFeatures
 import Logger
@@ -71,7 +72,25 @@ def background_cleanup(interval):
 
     while True:
         schedule.run_pending()
-        time.sleep(7200)
+        time.sleep(86400)
+
+
+# TEST
+# def background_cleanup(interval):
+#     schedule.clear()
+#     schedule.every(interval).seconds.do(lambda: start_cleanup(interval))  # Test with seconds
+#
+#     while True:
+#         schedule.run_pending()
+#         print("Checking schedule...")  # Debugging
+#         time.sleep(5)  # Sleep for 5 seconds to observe scheduling
+
+
+def auto_start_cleanup():
+    interval = CleanUpFeatures.load_days()  # Load saved interval
+    if interval > 0:  # If a valid interval is saved, start scheduling
+        threading.Thread(target=background_cleanup, args=(interval,), daemon=True).start()
+        print(f"Auto-started cleanup every {interval} days.")
 
 
 # Function to start background thread for scheduling
@@ -82,9 +101,21 @@ def scheduler():
 
 
 # Functions for system tray support
+if getattr(sys, 'frozen', False):
+    base_path = sys._MEIPASS  # Temp folder when running as an EXE
+else:
+    base_path = os.path.dirname(__file__)  # Normal script execution
+
+icon_path = os.path.join(base_path, "icon.ico")
+
+
+def create_image():
+    img = Image.open(icon_path)
+    return img
+
+
 def minimize_to_tray(*args):
     root.withdraw()
-    threading.Thread(target=tray_icon.run, daemon=True).start()
 
 
 def restore_from_tray(icon, item=None):
@@ -106,7 +137,7 @@ root.protocol("WM_DELETE_WINDOW", minimize_to_tray)
 # Tray icon
 tray_img = Image.new('RGB', (64, 64), (255, 255, 255))
 tray_menu = Menu(MenuItem("Open", restore_from_tray), MenuItem("Exit", exit_app))
-tray_icon = Icon("Automated-PC-Maintenance", tray_img, menu=tray_menu)
+tray_icon = Icon("Automated-PC-Maintenance", create_image(), menu=tray_menu)
 
 
 # Clean up folders label
@@ -142,9 +173,11 @@ Button(root, text="Schedule Cleanup", command=scheduler).pack(pady=20, padx=100)
 
 # Minimize to Tray
 
-
 list_dir()
 
+threading.Thread(target=tray_icon.run, daemon=True).start()
+
+auto_start_cleanup()
 
 # Run GUI
 root.mainloop()
