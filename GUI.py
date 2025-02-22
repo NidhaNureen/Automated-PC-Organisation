@@ -7,6 +7,7 @@ import Logger
 import threading
 import time
 import schedule
+import winreg
 from pystray import Icon, MenuItem, Menu
 from PIL import Image
 
@@ -109,6 +110,21 @@ else:
 icon_path = os.path.join(base_path, "icon.ico")
 
 
+# Make it a start up app
+def add_to_startup():
+    exe_path = sys.executable
+    if getattr(sys, 'frozen', False):
+        exe_path = os.path.abspath(exe_path)
+
+    key = r"Software\Microsoft\Windows\CurrentVersion\Run"
+    try:
+        with winreg.OpenKey(winreg.HKEY_CURRENT_USER, key, 0, winreg.KEY_SET_VALUE) as reg_key:
+            winreg.SetValueEx(reg_key, "AutomatedPCCleanup", 0, winreg.REG_SZ, exe_path)
+        print("Added to startup successfully")
+    except Exception as e:
+        print(f"Failed to add to startup: {e}")
+
+
 def create_image():
     img = Image.open(icon_path)
     return img
@@ -178,6 +194,8 @@ list_dir()
 threading.Thread(target=tray_icon.run, daemon=True).start()
 
 auto_start_cleanup()
+
+add_to_startup()
 
 # Run GUI
 root.mainloop()
