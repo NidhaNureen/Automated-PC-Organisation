@@ -4,56 +4,55 @@ import time
 import logging
 import sys
 
-DATA_FILE = "directories.txt"
-CONFIG_FILE = "config.json"
-
 logger = logging.getLogger()
+
+
+def get_config_path():
+    config_dir = os.path.join(os.getenv('LOCALAPPDATA'), 'Automated-PC-Maintenance')
+    os.makedirs(config_dir, exist_ok=True)
+    return os.path.join(config_dir, "config.json")
+
+
+CONFIG_FILE = get_config_path()
+
+
+def load_config():
+    if not os.path.exists(CONFIG_FILE):
+        return {"directories": [], "days": 7}
+
+    with open(CONFIG_FILE, "r", encoding="utf-8") as f:
+        return json.load(f)
+
+
+def save_config(config):
+    with open(CONFIG_FILE, "w", encoding="utf-8") as f:
+        json.dump(config, f, indent=4)
 
 
 # Function to load all directories from data file
 def load_dir():
-    if os.path.exists(DATA_FILE):
-        with open(DATA_FILE, "r") as file:
-            return [line.strip() for line in file.readlines()]
-    return []
+    config = load_config()
+    return config.get("directories", [])
 
 
 # Function to save directories to data file
 def save_dir(dirs):
-    with open(DATA_FILE, "w") as file:
-        file.write("\n".join(dirs))
-
-
-def get_config_path():
-    """Ensure config.json is saved in a persistent location."""
-    if getattr(sys, "frozen", False):  # Running as an EXE
-        base_path = os.path.expanduser("~\\AppData\\Local\\Automated-PC-Maintenance")
-    else:  # Running as a script
-        base_path = os.path.dirname(__file__)
-
-    os.makedirs(base_path, exist_ok=True)  # Ensure directory exists
-    return os.path.join(base_path, CONFIG_FILE)
+    config = load_config()
+    config["directories"] = dirs
+    save_config(config)
 
 
 # Function to load the saved interval
 def load_days():
-    config_path = get_config_path()
-    if os.path.exists(config_path):
-        with open(config_path, "r") as file:
-            try:
-                config = json.load(file)
-                return config.get("days", 30)
-            except json.JSONDecodeError:
-                return 30
-    return 30
+    config = load_config()
+    return int(config.get("days", 7))
 
 
 # Function to save interval
 def save_days(days):
-    print("Saving config to:", get_config_path())
-    config_path = get_config_path()
-    with open(config_path, "w") as file:
-        json.dump({"days": days}, file)
+    config = load_config()
+    config["days"] = days
+    save_config(config)
 
 
 # Function to check file age

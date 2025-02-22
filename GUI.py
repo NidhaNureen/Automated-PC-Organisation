@@ -96,9 +96,15 @@ def auto_start_cleanup():
 
 # Function to start background thread for scheduling
 def scheduler():
-    interval = int(days_entry.get())
-    threading.Thread(target=background_cleanup, args=(interval,), daemon=True).start()
-    messagebox.showinfo("Scheduler", f"Automatic cleanup scheduled every {interval} days.")
+    try:
+        interval = int(days_entry.get())
+        if interval <= 0:
+            raise ValueError("Interval must be greater than 0.")
+        CleanUpFeatures.save_days(interval)
+        threading.Thread(target=background_cleanup, args=(interval,), daemon=True).start()
+        messagebox.showinfo("Scheduler", f"Automatic cleanup scheduled every {interval} days.")
+    except ValueError:
+        messagebox.showerror("Error", "Please enter an integer.")
 
 
 # Functions for system tray support
