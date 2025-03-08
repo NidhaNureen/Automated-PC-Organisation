@@ -1,3 +1,4 @@
+import logging
 from tkinter import *
 from tkinter import filedialog, messagebox
 import sys
@@ -62,8 +63,10 @@ saved_days = CleanUpFeatures.load_days()
 
 # Function to trigger clean-up (temp)
 def start_cleanup(days):
+    logging.info(f"Starting cleanup for files older than {days} days...")
     CleanUpFeatures.save_days(days)
     Logger.clean_up_log()
+    logging.info("Cleanup completed.")
 
 
 # Function to run cleanup in background
@@ -73,10 +76,10 @@ def background_cleanup(interval):
 
     while True:
         schedule.run_pending()
-        time.sleep(86400)
+        time.sleep(60)
 
 
-# TEST
+# # TEST
 # def background_cleanup(interval):
 #     schedule.clear()
 #     schedule.every(interval).seconds.do(lambda: start_cleanup(interval))  # Test with seconds
