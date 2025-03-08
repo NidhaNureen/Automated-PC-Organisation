@@ -1,8 +1,13 @@
 import json
 import os
+import threading
 import time
 import logging
 import sys
+
+import schedule
+
+import Logger
 
 logger = logging.getLogger()
 
@@ -108,3 +113,42 @@ def cleanup():
         except Exception as e:
             print(f"An error occurred while trying to clear files: {e}")
             logger.error(f"An error occurred while trying to clear files: {e}")
+
+
+# Function to trigger cleanup
+def start_cleanup(days):
+    logging.info(f"Starting cleanup for files older than {days} days...")
+    save_days(days)  # Save user input days
+    Logger.clean_up_log()  # Call logging function
+    logging.info("Cleanup completed.")
+
+
+# Function to run cleanup in background
+def background_cleanup(interval):
+    schedule.clear()
+    schedule.every(interval).days.do(lambda: start_cleanup(interval))
+    while True:
+        schedule.run_pending()
+        logging.info("checking...")
+        time.sleep(60)
+
+
+# Function to auto-start cleanup
+def auto_start_cleanup():
+    interval = load_days()
+    if interval > 0:  # If a valid interval is saved, start scheduling
+        threading.Thread(target=background_cleanup, args=(interval,), daemon=True).start()
+        print(f"Auto-started cleanup every {interval} days.")
+
+
+# Function to schedule cleanup via GUI
+def scheduler(interval):
+    try:
+        interval = int(interval)
+        if interval <= 0:
+            raise ValueError("Interval must be greater than 0.")
+        save_days(interval)
+        threading.Thread(target=background_cleanup, args=(interval,), daemon=True).start()
+        return f"Automatic cleanup scheduled every {interval} days."
+    except ValueError:
+        return "Error: Please enter a valid integer."

@@ -4,10 +4,7 @@ from tkinter import filedialog, messagebox
 import sys
 import os
 import CleanUpFeatures
-import Logger
 import threading
-import time
-import schedule
 import winreg
 from pystray import Icon, MenuItem, Menu
 from PIL import Image
@@ -61,53 +58,18 @@ def remove_dir():
 saved_days = CleanUpFeatures.load_days()
 
 
-# Function to trigger clean-up (temp)
-def start_cleanup(days):
-    logging.info(f"Starting cleanup for files older than {days} days...")
-    CleanUpFeatures.save_days(days)
-    Logger.clean_up_log()
-    logging.info("Cleanup completed.")
+def start_cleanup():
+    days = int(days_entry.get())
+    CleanUpFeatures.start_cleanup(days)
 
 
-# Function to run cleanup in background
-def background_cleanup(interval):
-    schedule.clear()
-    schedule.every(interval).days.do(lambda: start_cleanup(interval))
-
-    while True:
-        schedule.run_pending()
-        time.sleep(60)
-
-
-# # TEST
-# def background_cleanup(interval):
-#     schedule.clear()
-#     schedule.every(interval).seconds.do(lambda: start_cleanup(interval))  # Test with seconds
-#
-#     while True:
-#         schedule.run_pending()
-#         print("Checking schedule...")  # Debugging
-#         time.sleep(5)  # Sleep for 5 seconds to observe scheduling
-
-
-def auto_start_cleanup():
-    interval = CleanUpFeatures.load_days()  # Load saved interval
-    if interval > 0:  # If a valid interval is saved, start scheduling
-        threading.Thread(target=background_cleanup, args=(interval,), daemon=True).start()
-        print(f"Auto-started cleanup every {interval} days.")
-
-
-# Function to start background thread for scheduling
 def scheduler():
-    try:
-        interval = int(days_entry.get())
-        if interval <= 0:
-            raise ValueError("Interval must be greater than 0.")
-        CleanUpFeatures.save_days(interval)
-        threading.Thread(target=background_cleanup, args=(interval,), daemon=True).start()
-        messagebox.showinfo("Scheduler", f"Automatic cleanup scheduled every {interval} days.")
-    except ValueError:
-        messagebox.showerror("Error", "Please enter an integer.")
+    interval = days_entry.get()
+    result = CleanUpFeatures.scheduler(interval)
+    if "Error" in result:
+        messagebox.showerror("Error", result)
+    else:
+        messagebox.showinfo("Scheduler", result)
 
 
 # Functions for system tray support
@@ -202,9 +164,11 @@ list_dir()
 
 threading.Thread(target=tray_icon.run, daemon=True).start()
 
-auto_start_cleanup()
+CleanUpFeatures.auto_start_cleanup()
 
 add_to_startup()
 
+
 # Run GUI
-root.mainloop()
+def run_app():
+    root.mainloop()
