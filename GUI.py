@@ -1,6 +1,6 @@
 import logging
 from tkinter import *
-from tkinter import filedialog, messagebox
+from tkinter import filedialog, messagebox, ttk
 import sys
 import os
 import CleanUpFeatures
@@ -118,6 +118,7 @@ def exit_app(icon, item=None):
 # Create the main window
 root = Tk()
 root.title("Folder Management")
+root.geometry("500x350")
 
 root.protocol("WM_DELETE_WINDOW", minimize_to_tray)
 
@@ -126,37 +127,46 @@ tray_img = Image.new('RGB', (64, 64), (255, 255, 255))
 tray_menu = Menu(MenuItem("Open", restore_from_tray), MenuItem("Exit", exit_app))
 tray_icon = Icon("Automated-PC-Maintenance", create_image(), menu=tray_menu)
 
+# Use a modern theme (only works with `ttk`)
+style = ttk.Style()
+style.configure("TButton", font=("Arial", 10), padding=5)
+style.configure("TLabel", font=("Arial", 10), padding=5)
 
-# Clean up folders label
-w = Label(root, text="Select Folders to Clear")
-w.pack(pady=10, padx=100)
+# Title Label
+title_label = Label(root, text="Select Folders to Clear", font=("Arial", 12, "bold"))
+title_label.pack(pady=10)
 
-# Listbox for selected dirs
-listbox = Listbox(root, width=60, height=5, selectmode=SINGLE)
-listbox.pack(pady=10, padx=100)
+# Listbox for selected directories
+listbox_frame = Frame(root)
+listbox_frame.pack(pady=5, padx=20, fill="x")
 
-# Frame for buttons
+listbox = Listbox(listbox_frame, width=60, height=5, selectmode=SINGLE, bg="#f8f8f8", relief=GROOVE)
+listbox.pack(fill="x", padx=10, pady=5)
+
+# Buttons Frame
 button_frame = Frame(root)
 button_frame.pack(pady=10)
 
-# Select folders button
-select_button = Button(button_frame, text="Select Folder", command=select_dir)
-select_button.pack(side=LEFT, padx=5)
+select_button = ttk.Button(button_frame, text="Select Folder", command=select_dir, width=15)
+select_button.pack(side=LEFT, padx=10)
 
-# Remove folder button
-remove_button = Button(button_frame, text="Remove Folder", command=remove_dir)
-remove_button.pack(side=LEFT, padx=5)
+remove_button = ttk.Button(button_frame, text="Remove Folder", command=remove_dir, width=15)
+remove_button.pack(side=LEFT, padx=10)
 
-# Label and Entry for number of days
-days_label = Label(root, text="Number of days:")
-days_label.pack(pady=5)
+# Days Entry Frame
+days_frame = Frame(root)
+days_frame.pack(pady=10)
 
-days_entry = Entry(root)
+days_label = Label(days_frame, text="Number of days:", font=("Arial", 10))
+days_label.pack(side=LEFT, padx=5)
+
+days_entry = Entry(days_frame, width=10, font=("Arial", 10), justify="center", bg="#f0f0f0", relief=SUNKEN)
 days_entry.insert(0, saved_days)  # Default value
-days_entry.pack(pady=5)
+days_entry.pack(side=LEFT)
 
-# Cleanup button
-Button(root, text="Schedule Cleanup", command=scheduler).pack(pady=20, padx=100)
+# Schedule Cleanup Button
+schedule_button = ttk.Button(root, text="Schedule Cleanup", command=scheduler, width=20)
+schedule_button.pack(pady=20)
 
 # Minimize to Tray
 
