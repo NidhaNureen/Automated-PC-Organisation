@@ -126,7 +126,6 @@ def run_app():
     root.protocol("WM_DELETE_WINDOW", minimize_to_tray)
 
     # Tray icon
-    tray_img = Image.new('RGB', (64, 64), (255, 255, 255))
     tray_menu = Menu(MenuItem("Open", restore_from_tray), MenuItem("Exit", exit_app))
     tray_icon = Icon("Automated-PC-Maintenance", create_image(), menu=tray_menu)
 
