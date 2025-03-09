@@ -3,10 +3,7 @@ import os
 import threading
 import time
 import logging
-import sys
-
 import schedule
-
 import Logger
 
 logger = logging.getLogger()
@@ -129,7 +126,6 @@ def background_cleanup(interval):
     schedule.every(interval).days.do(lambda: start_cleanup(interval))
     while True:
         schedule.run_pending()
-        logging.info("checking...")
         time.sleep(60)
 
 
